@@ -4,10 +4,11 @@ from datetime import datetime
 
 import motor.motor_asyncio
 from bson import ObjectId
+from loguru import logger
 
 # from bson import ObjectId
 from helpers import convert_date
-from parsing import get_descriptions_routes, get_sv_cupe
+from parsing import get_descriptions_routes, get_free_seats, get_sv_cupe
 
 client = motor.motor_asyncio.AsyncIOMotorClient("localhost", 27017)
 db = client.telegram
@@ -16,10 +17,14 @@ db_queue = client.queue
 
 async def update_data():
     collections = await db.list_collection_names()
+    logger.info(f"Collections: {collections}")
     al_data = []
     for collection_name in collections:
         collection = db[collection_name]
+
         directions = await collection.find().to_list(length=None)
+        logger.info(f"directions: {directions}")
+
         # pprint.pprint(directions)
         for direction in directions:
             routes = await get_descriptions_routes(direction["url"])
@@ -41,17 +46,32 @@ async def update_data():
                 result = await collection.update_many(
                     {"_id": ObjectId(direction["_id"])}, {"$set": new_fields}
                 )
-            pprint.pprint(found_dict["number_route"])
+            # pprint.pprint(found_dict["number_route"])
+            try:
+                for type in direction["type_seats"]:
+                    logger.info(f"Seat Type to parse: {type}")
+                    type_new_data = await get_free_seats(
+                        number_route=direction["number_route"],
+                        url=direction["url"],
+                        type_seat=type,
+                    )
+                    logger.info(f"New parsed type_seats data: {type_new_data}")
+                    found_dict["seats"][type] = type_new_data
+            except Exception as e:
+                logger.error(f"Problem parsing type_seats data {e}")
+
             sv_cupe = await get_sv_cupe(direction["number_route"], direction["url"])
             found_dict["seats"]["Купе"] = sv_cupe["Купе"]
             found_dict["seats"]["СВ"] = sv_cupe["СВ"]
+            logger.info(f"AAAAJSJDJDSJSDJJSD: {found_dict}")
+
             result = await collection.update_one(
                 {"_id": ObjectId(direction["_id"])},
                 {"$set": {"seats": found_dict["seats"]}},
             )
 
             if result.modified_count > 0:
-                print("modify")
+
                 await db_queue.work.insert_one(
                     {
                         "user_id": collection_name,
@@ -66,7 +86,7 @@ async def main():
             try:
                 print(datetime.now())
                 await update_data()
-                await asyncio.sleep(300)
+                await asyncio.sleep(60)
             except Exception as e:
                 print(e)
             finally:

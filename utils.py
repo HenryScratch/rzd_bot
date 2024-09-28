@@ -1,5 +1,6 @@
 import motor.motor_asyncio
 from bson import ObjectId
+from loguru import logger
 
 from helpers import convert_date
 
@@ -22,6 +23,7 @@ async def add_routes_db(user: str, route: dict):
         f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
     )
     # route['routes'] = await parsing_route(route['url'])
+    logger.info("Route added to db f{route}")
     await db[f"{user}"].insert_one(route)
 
 

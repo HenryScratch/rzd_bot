@@ -5,6 +5,7 @@ import time
 from collections import Counter
 
 import aiohttp
+from loguru import logger
 from selectolax.lexbor import LexborHTMLParser
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -23,17 +24,17 @@ from helpers import (
 
 
 def get_driver():
+    logger.info("Initializing Firefox WebDriver...")
     options = Options()
     options.add_argument("--headless")  # Run in headless mode (no UI)
 
     # Specify the path to geckodriver if necessary (omit if in PATH)
-    geckodriver_path = (
-        "./geckodriver"  # Replace this with your actual path or omit if it's in PATH
-    )
+    geckodriver_path = "./geckodriver"  # Adjust as needed
     service = FirefoxService(executable_path=geckodriver_path)
 
     # Initialize Firefox WebDriver with the options
     driver = webdriver.Firefox(service=service, options=options)
+    logger.info("WebDriver initialized successfully.")
 
     return driver
 
@@ -48,6 +49,7 @@ async def fetch_city(query):
         ) as response:
             if response.status == 200:
                 html = await response.text()
+                logger.debug(f"Fetched data for query: {query}")
                 if html != "{}":
                     json_data = json.loads(html)
                     raw_cities = json_data["city"]
@@ -55,15 +57,21 @@ async def fetch_city(query):
                         raw_city["name"]: raw_city["nodeId"] for raw_city in raw_cities
                     }
             else:
+                logger.warning(f"Failed to fetch city data: {response.status}")
                 return None
 
 
 async def check_route(route) -> bool:
     try:
+        logger.info(f"Checking route: {route}")
+
         src = route["src"].split("_")[1]
         dst = route["dst"].split("_")[1]
         driver = get_driver()
         driver.get(
+            f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
+        )
+        logger.info(
             f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
         )
         # driver.implicitly_wait(5)
@@ -73,28 +81,36 @@ async def check_route(route) -> bool:
 
         parser = LexborHTMLParser(html)
         cards = parser.css("div.row.card__body")
+        # logger.info(f"{cards}")
         if len(cards) > 0:
             for card in cards:
                 seats = card.css_first("div.col.body__classes")
                 type_seats = seats.css("rzd-card-class")
                 if len(type_seats) > 0:
+                    logger.info("Seats available for the route.")
                     return True
+            logger.info("No seats available.")
             return False
         else:
+            logger.error(f"No route found")
             return False
     except Exception as e:
-        print(e)
+        logger.error(f"Error checking route: {e}")
+
     finally:
         driver.quit()
+        logger.debug("WebDriver session closed.")
 
 
 async def get_free_seats(number_route: str, url: str, type_seat: str):
+    logger.info(f"Fetching free seats for route {number_route} and type {type_seat}.")
+
     try:
         driver = get_driver()
         driver.get(url)
         driver.maximize_window()
         # driver.implicitly_wait(5)
-        time.sleep(3)
+        time.sleep(5)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
         # находим все карточки с маршрутами
@@ -174,6 +190,7 @@ async def get_descriptions_routes(url: str):
     driver = get_driver()
     try:
         driver.get(url)
+        time.sleep(5)
         # driver.implicitly_wait(5)
         # time.sleep(15)
         # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -181,8 +198,12 @@ async def get_descriptions_routes(url: str):
         # находим все карточки с маршрутами
         all_data = []
         routes = driver.find_elements(By.CSS_SELECTOR, "div.row.card__body")
+        logger.info(f"Routes: {routes}")
+
         for route in routes:
             types_seats = route.find_elements(By.CSS_SELECTOR, "rzd-card-class")
+            logger.info(f"Routes: {types_seats}")
+
             if len(types_seats) > 0:
                 data = {}
                 data["number_route"] = cleaner(
@@ -225,6 +246,8 @@ async def get_descriptions_routes(url: str):
                     data["seats"] = data_seats
                 all_data.append(data)
         # driver.close()
+        logger.info(f"all_data: {all_data}")
+
         return all_data
 
     except Exception as err:
