@@ -48,6 +48,34 @@ async def get_routes_db(user, id):
     return await db[f"{user}"].find_one({"_id": ObjectId(id)}, {})
 
 
+async def get_seats_variants(found_keys: list) -> list[str]:
+    variants1 = [
+        "Базовый",
+        "Эконом",
+        "Эконом+",
+        "Бизнес класс",
+        "Базовый (для инвалидов)",
+        "Вагон-бистро",
+        "Первый класс",
+        "Купе-переговорная",
+        "Эконом (для инвалидов)",
+        "Семейный",
+    ]
+    variants2 = [
+        "Плацкартный",
+        "Купе",
+        "СВ",
+        "Перевозка животных без сопровождающего",
+    ]
+
+    if found_keys[0] in variants1:
+        return variants1
+    if found_keys[0] in variants2:
+        return variants2
+    else:
+        return found_keys
+
+
 # import asyncio
 # import json
 # import pprint

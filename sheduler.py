@@ -55,8 +55,12 @@ async def update_data():
                         url=direction["url"],
                         type_seat=type,
                     )
-                    logger.info(f"New parsed type_seats data: {type_new_data}")
-                    found_dict["seats"][type] = type_new_data
+                    if type_new_data:
+                        logger.info(f"New parsed type_seats data: {type_new_data}")
+                        found_dict["seats"][type] = type_new_data
+                    else:
+                        found_dict["seats"][type] = 0
+
             except Exception as e:
                 logger.error(f"Problem parsing type_seats data {e}")
 

@@ -10,23 +10,11 @@ from loguru import logger
 from transliterate import translit
 
 from helpers import cleaner, convert_date, route_print, validate_date
-from keyboards import (
-    inline_cities,
-    inline_routes,
-    inline_routes_description,
-    inline_type_seats,
-    main_keyboard,
-    skip_keyboard,
-)
+from keyboards import (inline_cities, inline_routes, inline_routes_description,
+                       inline_type_seats, main_keyboard, skip_keyboard)
 from parsing import check_route, fetch_city, get_descriptions_routes
-from utils import (
-    add_routes_db,
-    add_user,
-    delete_route_db,
-    get_routes,
-    get_routes_db,
-    parsing_route_db,
-)
+from utils import (add_routes_db, add_user, delete_route_db, get_routes,
+                   get_routes_db, get_seats_variants, parsing_route_db)
 
 router = Router()
 
@@ -241,15 +229,21 @@ async def get_number_route_single(message: Message, state: FSMContext):
 
     await state.update_data(number_route=message.text)
     data = await state.get_data()
+
     found_route = next(
         (item for item in data["routes"] if item.get("number_route") == message.text),
         None,
     )
+    logger.info(f"Seats: SKFSKFJSKFJKSFJKSKFJSKFJ{found_route["seats"]}, {found_route}")
+    
+    seats_to_choose = await get_seats_variants(found_keys=list(found_route["seats"].keys()))
+    logger.info(f"Seats: HSHAHAHAHAHAHAHAHAHAHAHAH{seats_to_choose}")
+
     if found_route != None:
         await state.update_data(route=found_route)
         await message.answer(
             "Выберите один или несколько типов мест для отслеживания или нажмите 'Далее' для выбора всех типов сразу.",
-            reply_markup=await inline_type_seats(found_route["seats"].keys()),
+            reply_markup=await inline_type_seats(seats_to_choose),
         )
         await state.set_state(Route_add.type_seats_selecting)
         await state.update_data(type_seats=set())
