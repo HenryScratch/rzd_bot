@@ -331,7 +331,7 @@ async def get_number_route_from(message: Message, state: FSMContext):
         await state.update_data(route=found_route)
         await message.answer(
             "Выберите один или несколько типов мест для отслеживания или нажмите 'Далее' для выбора всех типов сразу.",
-            reply_markup=await inline_type_seats(get_seats_variants(found_route["seats"].keys())),
+            reply_markup=await inline_type_seats(await get_seats_variants(found_route["seats"].keys())),
         )
         await state.set_state(Route_add.type_seats_selecting_from)
         await state.update_data(type_seats=set())
@@ -419,7 +419,7 @@ async def get_num_seats(message: Message, state: FSMContext):
         await state.update_data(num_seats=message.text)
         await message.answer(
             "Выберите один или несколько типов мест для отслеживания или нажмите 'Далее' для выбора всех типов сразу.",
-            reply_markup=await inline_type_seats(get_seats_variants(data['route']["seats"].keys())),
+            reply_markup=await inline_type_seats(await get_seats_variants(data['route']["seats"].keys())),
         )
         await state.set_state(Route_add.type_seats_selecting_from)
         await state.update_data(type_seats=set())
