@@ -102,11 +102,10 @@ async def check_route(route) -> bool:
         logger.debug("WebDriver session closed.")
 
 
-async def get_free_seats(number_route: str, url: str, type_seat: str):
+async def get_free_seats(number_route: str, url: str, type_seat: str, driver):
     logger.info(f"Fetching free seats for route {number_route} and type {type_seat}.")
 
     try:
-        driver = get_driver()
         driver.get(url)
         driver.maximize_window()
         # driver.implicitly_wait(5)
@@ -161,9 +160,9 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
         driver.quit()
 
 
-async def get_sv_cupe(number_route: str, url: str):
-    all_sv = await get_free_seats(number_route, url, "СВ")
-    all_cupe = await get_free_seats(number_route, url, "Купе")
+async def get_sv_cupe(number_route: str, url: str, driver):
+    all_sv = await get_free_seats(number_route, url, "СВ", driver)
+    all_cupe = await get_free_seats(number_route, url, "Купе", driver)
 
     all = {}
     if all_sv is not None:
@@ -186,9 +185,9 @@ async def get_sv_cupe(number_route: str, url: str):
     return all
 
 
-async def get_descriptions_routes(url: str):
-    driver = get_driver()
+async def get_descriptions_routes(url: str, driver=None):
     try:
+        driver = driver or get_driver()
         driver.get(url)
         time.sleep(5)
         # driver.implicitly_wait(5)

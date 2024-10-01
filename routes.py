@@ -5,7 +5,7 @@ from aiogram import F, Router
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup
 from loguru import logger
 from transliterate import translit
 
@@ -33,6 +33,7 @@ class Route_add(StatesGroup):
     type_seats_selecting_from = State()
     type_seats_done = State()
     obratno = State()
+    num_seats = State()
 
 
 class Route_delete(StatesGroup):
@@ -123,10 +124,16 @@ async def add_src(message: Message, state: FSMContext):
 
     cities = await fetch_city(message.text)
     if cities != None:
-        await message.answer(
-            "Выберите из списка", reply_markup=await inline_cities(cities)
-        )
-        await state.set_state(Route_add.src)
+        if len(cities) == 1:
+            city = list(cities.items())[0]
+            await state.update_data(src=f'{city[0]}_{city[1]}')
+            await state.set_state(Route_add.input_dst)
+            await message.answer("Пункт прибытия")
+        else:
+            await message.answer(
+                "Выберите из списка", reply_markup=await inline_cities(cities)
+            )
+            await state.set_state(Route_add.src)
     else:
         await message.answer(
             "Не существует, попробуйте еще раз",
@@ -153,10 +160,16 @@ async def add_dst(message: Message, state: FSMContext):
 
     cities = await fetch_city(message.text)
     if cities != None:
-        await message.answer(
-            "Выберите из списка", reply_markup=await inline_cities(cities)
-        )
-        await state.set_state(Route_add.dst)
+        if len(cities) == 1:
+            city = list(cities.items())[0]
+            await state.update_data(dst=f'{city[0]}_{city[1]}')
+            await state.set_state(Route_add.date_forward)
+            await message.answer("Введите дату отправления в формате 01.12.2024")
+        else:
+            await message.answer(
+                "Выберите из списка", reply_markup=await inline_cities(cities)
+            )
+            await state.set_state(Route_add.dst)
     else:
         await message.answer(
             "Не существует, попробуйте еще раз",
@@ -234,19 +247,17 @@ async def get_number_route_single(message: Message, state: FSMContext):
         (item for item in data["routes"] if item.get("number_route") == message.text),
         None,
     )
-    logger.info(f"Seats: SKFSKFJSKFJKSFJKSKFJSKFJ{found_route["seats"]}, {found_route}")
-    
-    seats_to_choose = await get_seats_variants(found_keys=list(found_route["seats"].keys()))
-    logger.info(f"Seats: HSHAHAHAHAHAHAHAHAHAHAHAH{seats_to_choose}")
 
     if found_route != None:
+        logger.info(f"Seats: SKFSKFJSKFJKSFJKSKFJSKFJ{found_route["seats"]}, {found_route}")
+
+        seats_to_choose = await get_seats_variants(found_keys=list(found_route["seats"].keys()))
+        logger.info(f"Seats: HSHAHAHAHAHAHAHAHAHAHAHAH{seats_to_choose}")
         await state.update_data(route=found_route)
         await message.answer(
-            "Выберите один или несколько типов мест для отслеживания или нажмите 'Далее' для выбора всех типов сразу.",
-            reply_markup=await inline_type_seats(seats_to_choose),
+            "Укажите желаемое количество мест",
         )
-        await state.set_state(Route_add.type_seats_selecting)
-        await state.update_data(type_seats=set())
+        await state.set_state(Route_add.num_seats)
     else:
         await message.answer("Введен несуществующий маршрут, попробуйте еще раз")
         await state.set_state(Route_add.number_route_single)
@@ -265,7 +276,7 @@ async def type_seats_done_callback(callback: CallbackQuery, state: FSMContext):
         await state.update_data(type_seats=set(data["route"]["seats"].keys()))
         data = await state.get_data()
         await callback.message.edit_text(
-            f"Маршрут: {data['number_route']} добавлен. Выбраны следующие категории: {', '.join(data['type_seats'])}.\nДля более детальной информации о машруте, выберите данный машрут в 'Мои маршруты'."
+            f"Маршрут: {data['number_route']} добавлен. Количество мест: {data['num_seats']}. Выбраны следующие категории: {', '.join(data['type_seats'])}.\nДля более детальной информации о машруте, выберите данный машрут в 'Мои маршруты'."
         )
 
         data["type_seats"] = list(data["type_seats"])
@@ -275,7 +286,7 @@ async def type_seats_done_callback(callback: CallbackQuery, state: FSMContext):
         await state.clear()
     else:
         await callback.message.edit_text(
-            f"Маршрут: {data['number_route']} добавлен. Выбраны следующие категории {', '.join(data['type_seats'])}.\nДля более детальной информации о машруте, выберите данный машрут в 'Мои маршруты'."
+            f"Маршрут: {data['number_route']} добавлен. Количество мест: {data['num_seats']}. Выбраны следующие категории {', '.join(data['type_seats'])}.\nДля более детальной информации о машруте, выберите данный машрут в 'Мои маршруты'."
         )
         data = await state.get_data()
         data["type_seats"] = list(data["type_seats"])
@@ -320,7 +331,7 @@ async def get_number_route_from(message: Message, state: FSMContext):
         await state.update_data(route=found_route)
         await message.answer(
             "Выберите один или несколько типов мест для отслеживания или нажмите 'Далее' для выбора всех типов сразу.",
-            reply_markup=await inline_type_seats(found_route["seats"].keys()),
+            reply_markup=await inline_type_seats(await get_seats_variants(found_route["seats"].keys())),
         )
         await state.set_state(Route_add.type_seats_selecting_from)
         await state.update_data(type_seats=set())
@@ -340,32 +351,34 @@ async def type_seats_done_callback_from(callback: CallbackQuery, state: FSMConte
         await state.update_data(type_seats=set(data["route"]["seats"].keys()))
         data = await state.get_data()
         await callback.message.edit_text(
-            f"Маршрут: {data['number_route']} добавлен. Выбраны следующие категории: {', '.join(data['type_seats'])}.\nДля более детальной информации о машруте, выберите данный машрут в 'Мои маршруты'."
+            f"Маршрут: {data['number_route']} добавлен. Количество мест: {data['num_seats']}. Выбраны следующие категории: {', '.join(data['type_seats'])}.\nДля более детальной информации о машруте, выберите данный машрут в 'Мои маршруты'."
         )
 
         data["type_seats"] = list(data["type_seats"])
         data.pop("routes", None)
         data.pop("date_back", None)
-        data.pop("obratno", None)
+        obratno = data.pop("obratno", None)
         data["date"] = data.pop("date_forward", None)
         await add_routes_db(callback.from_user.id, data)
 
         await state.set_state(Route_add.obratno)
-        await add_obratno(message, state)
+        if obratno:
+            await add_obratno(message, state)
 
     else:
         data["type_seats"] = list(data["type_seats"])
         data.pop("routes", None)
         data.pop("date_back", None)
-        data.pop("obratno", None)
+        obratno = data.pop("obratno", None)
         data["date"] = data.pop("date_forward", None)
         await add_routes_db(callback.from_user.id, data)
         await callback.message.edit_text(
-            f"Маршрут: {data['number_route']} добавлен. Выбраны следующие категории: {', '.join(data['type_seats'])}.\nДля более детальной информации о машруте, выберите данный машрут в 'Мои маршруты'."
+            f"Маршрут: {data['number_route']} добавлен. Количество мест: {data['num_seats']}. Выбраны следующие категории: {', '.join(data['type_seats'])}.\nДля более детальной информации о машруте, выберите данный машрут в 'Мои маршруты'."
         )
 
         await state.set_state(Route_add.obratno)
-        await add_obratno(message, state)
+        if obratno:
+            await add_obratno(message, state)
 
 
 @router.message(F.text == "Отмена")
@@ -396,6 +409,23 @@ async def type_seats_selecting_from_callback(
     # await state.set_state(Route_add.obratno)
     # await add_obratno(message, state)
 
+@router.message(F.text == "Отмена")
+@router.message(Route_add.num_seats)
+async def get_num_seats(message: Message, state: FSMContext):
+    data = await state.get_data()
+    if message.text not in map(str, range(1, 5)):
+        await message.answer('Введите число от 1 до 4')
+    else:
+        await state.update_data(num_seats=message.text)
+        await message.answer(
+            "Выберите один или несколько типов мест для отслеживания или нажмите 'Далее' для выбора всех типов сразу.",
+            reply_markup=await inline_type_seats(await get_seats_variants(data['route']["seats"].keys())),
+        )
+        await state.set_state(Route_add.type_seats_selecting_from)
+        await state.update_data(type_seats=set())
+
+
+
 
 @router.message(F.text == "Отмена")
 @router.message(Route_add.number_route_to)
@@ -409,11 +439,9 @@ async def get_number_route(message: Message, state: FSMContext):
     if found_route != None:
         await state.update_data(route=found_route)
         await message.answer(
-            "Выберите один или несколько типов мест для отслеживания или нажмите 'Далее' для выбора всех типов сразу.",
-            reply_markup=await inline_type_seats(found_route["seats"].keys()),
+            "Укажите желаемое количество мест",
         )
-        await state.set_state(Route_add.type_seats_selecting_from)
-        await state.update_data(type_seats=set())
+        await state.set_state(Route_add.num_seats)
     else:
         await message.answer("Введен несуществующий маршрут, попробуйте еще раз")
 
@@ -472,7 +500,7 @@ async def add_date_back(message: Message, state: FSMContext):
 async def add_obratno(message: Message, state: FSMContext):
     await message.answer("Обработка запроса для обратного маршрута...")
     data = await state.get_data()
-    data = data["obratno"]
+    # data = data["obratno"]
     check = await check_route(data)
     if check:
         url = f"https://ticket.rzd.ru/searchresults/v/1/{data['src'].split('_')[1]}/{data['dst'].split('_')[1]}/{convert_date(data['date'])}"

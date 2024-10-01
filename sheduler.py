@@ -8,16 +8,25 @@ from loguru import logger
 
 # from bson import ObjectId
 from helpers import convert_date
-from parsing import get_descriptions_routes, get_free_seats, get_sv_cupe
+from parsing import get_descriptions_routes, get_free_seats, get_sv_cupe, get_driver
 
 client = motor.motor_asyncio.AsyncIOMotorClient("localhost", 27017)
 db = client.telegram
 db_queue = client.queue
 
 
+def suitable_compartments(free_seats, num_seats, tt):
+    if not isinstance(free_seats, dict):
+        if isinstance(free_seats, list):
+            free_seats = max(free_seats)
+        return 1 if free_seats >= int(num_seats) else 0
+    return sum((v for k,  v in free_seats.items() if int(k) >= int(num_seats)), 0)
+
+
 async def update_data():
     collections = await db.list_collection_names()
     logger.info(f"Collections: {collections}")
+    driver = get_driver()
     al_data = []
     for collection_name in collections:
         collection = db[collection_name]
@@ -27,7 +36,9 @@ async def update_data():
 
         # pprint.pprint(directions)
         for direction in directions:
-            routes = await get_descriptions_routes(direction["url"])
+            routes = await get_descriptions_routes(direction["url"], driver=driver)
+            if not routes:
+                continue
             found_dict = next(
                 (
                     item
@@ -54,6 +65,7 @@ async def update_data():
                         number_route=direction["number_route"],
                         url=direction["url"],
                         type_seat=type,
+                        driver=driver
                     )
                     if type_new_data:
                         logger.info(f"New parsed type_seats data: {type_new_data}")
@@ -63,8 +75,9 @@ async def update_data():
 
             except Exception as e:
                 logger.error(f"Problem parsing type_seats data {e}")
+                raise
 
-            sv_cupe = await get_sv_cupe(direction["number_route"], direction["url"])
+            sv_cupe = await get_sv_cupe(direction["number_route"], direction["url"], driver=driver)
             found_dict["seats"]["Купе"] = sv_cupe["Купе"]
             found_dict["seats"]["СВ"] = sv_cupe["СВ"]
             logger.info(f"AAAAJSJDJDSJSDJJSD: {found_dict}")
@@ -73,8 +86,17 @@ async def update_data():
                 {"_id": ObjectId(direction["_id"])},
                 {"$set": {"seats": found_dict["seats"]}},
             )
+            found_new = {}
+            for type in direction["type_seats"]:
+                logger.warning(found_dict["seats"])
+                logger.warning(direction["seats"])
+                if new_seats := suitable_compartments(found_dict["seats"][type], direction['num_seats'], type) - suitable_compartments(direction.get("seats", {}).get(type, {}), direction['num_seats'], type):
+                    found_new[type] = new_seats
+                    logger.info(f"New suitable compartments: {found_new}")
 
-            if result.modified_count > 0:
+
+            # if result.modified_count > 0:
+            if found_new:
 
                 await db_queue.work.insert_one(
                     {
@@ -92,10 +114,12 @@ async def main():
                 await update_data()
                 await asyncio.sleep(60)
             except Exception as e:
+                raise
                 print(e)
             finally:
                 await asyncio.sleep(10)
     except Exception as e:
+        raise
         print(e)
 
 
