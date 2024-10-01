@@ -17,7 +17,8 @@ db_queue = client.queue
 
 def suitable_compartments(free_seats, num_seats, tt):
     if not isinstance(free_seats, dict):
-        logger.warning(f'{free_seats}, {type(free_seats)}, {tt}')
+        if isinstance(free_seats, list):
+            free_seats = max(free_seats)
         return 1 if free_seats >= int(num_seats) else 0
     return sum((v for k,  v in free_seats.items() if int(k) >= int(num_seats)), 0)
 
@@ -36,6 +37,8 @@ async def update_data():
         # pprint.pprint(directions)
         for direction in directions:
             routes = await get_descriptions_routes(direction["url"], driver=driver)
+            if not routes:
+                continue
             found_dict = next(
                 (
                     item
