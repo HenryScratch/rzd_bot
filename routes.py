@@ -33,6 +33,7 @@ class Route_add(StatesGroup):
     type_seats_selecting_from = State()
     type_seats_done = State()
     obratno = State()
+    num_seats = State()
 
 
 class Route_delete(StatesGroup):
@@ -396,6 +397,23 @@ async def type_seats_selecting_from_callback(
     # await state.set_state(Route_add.obratno)
     # await add_obratno(message, state)
 
+@router.message(F.text == "Отмена")
+@router.message(Route_add.num_seats)
+async def get_num_seats(message: Message, state: FSMContext):
+    data = await state.get_data()
+    if message.text not in map(str, range(1, 5)):
+        await message.answer('Введите число от 1 до 4')
+    else:
+        await state.update_data(num_seats=message.text)
+        await message.answer(
+            "Выберите один или несколько типов мест для отслеживания или нажмите 'Далее' для выбора всех типов сразу.",
+            reply_markup=await inline_type_seats(data['route']["seats"].keys()),
+        )
+        await state.set_state(Route_add.type_seats_selecting_from)
+        await state.update_data(type_seats=set())
+
+
+
 
 @router.message(F.text == "Отмена")
 @router.message(Route_add.number_route_to)
@@ -409,11 +427,9 @@ async def get_number_route(message: Message, state: FSMContext):
     if found_route != None:
         await state.update_data(route=found_route)
         await message.answer(
-            "Выберите один или несколько типов мест для отслеживания или нажмите 'Далее' для выбора всех типов сразу.",
-            reply_markup=await inline_type_seats(found_route["seats"].keys()),
+            "Укажите желаемое количество мест",
         )
-        await state.set_state(Route_add.type_seats_selecting_from)
-        await state.update_data(type_seats=set())
+        await state.set_state(Route_add.num_seats)
     else:
         await message.answer("Введен несуществующий маршрут, попробуйте еще раз")
 

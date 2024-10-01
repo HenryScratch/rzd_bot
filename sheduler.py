@@ -15,6 +15,10 @@ db = client.telegram
 db_queue = client.queue
 
 
+def suitable_compartments(free_seats, num_seats):
+    return sum((v for k,  v in free_seats.items() if int(k) >= int(num_seats)), 0)
+
+
 async def update_data():
     collections = await db.list_collection_names()
     logger.info(f"Collections: {collections}")
@@ -73,8 +77,14 @@ async def update_data():
                 {"_id": ObjectId(direction["_id"])},
                 {"$set": {"seats": found_dict["seats"]}},
             )
+            found_new = {}
+            for type in direction["type_seats"]:
+                if new_seats := suitable_compartments(found_dict["seats"][type], direction['num_seats']) - suitable_compartments(direction.get("seats", {}).get(type, {}), direction['num_seats']):
+                    found_new[type] = new_seats
 
-            if result.modified_count > 0:
+
+            # if result.modified_count > 0:
+            if found_new:
 
                 await db_queue.work.insert_one(
                     {
