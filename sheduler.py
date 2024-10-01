@@ -16,6 +16,8 @@ db_queue = client.queue
 
 
 def suitable_compartments(free_seats, num_seats):
+    if isinstance(free_seats, list):
+        return 0 ## купе для инвалидов
     return sum((v for k,  v in free_seats.items() if int(k) >= int(num_seats)), 0)
 
 
@@ -81,6 +83,7 @@ async def update_data():
             for type in direction["type_seats"]:
                 if new_seats := suitable_compartments(found_dict["seats"][type], direction['num_seats']) - suitable_compartments(direction.get("seats", {}).get(type, {}), direction['num_seats']):
                     found_new[type] = new_seats
+                    logger.info(f"New suitable compartments: {found_new}")
 
 
             # if result.modified_count > 0:
