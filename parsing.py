@@ -75,7 +75,7 @@ async def check_route(route) -> bool:
             f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
         )
         # driver.implicitly_wait(5)
-        time.sleep(5)
+        await asyncio.sleep(5)
         html = driver.page_source
         # driver.close()
 
