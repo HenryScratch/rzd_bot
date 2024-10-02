@@ -30,6 +30,7 @@ def get_driver():
 
     # Specify the path to geckodriver if necessary (omit if in PATH)
     geckodriver_path = "./geckodriver"  # Adjust as needed
+
     service = FirefoxService(executable_path=geckodriver_path)
 
     # Initialize Firefox WebDriver with the options
