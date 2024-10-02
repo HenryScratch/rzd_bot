@@ -20,7 +20,7 @@ def suitable_compartments(free_seats, num_seats):
         if isinstance(free_seats, list):
             free_seats = max(map(len, free_seats))
         return free_seats if free_seats >= int(num_seats) else 0
-    return sum((num_seats for k,  v in free_seats.items() if int(k) >= int(num_seats)), 0)
+    return sum((int(num_seats) for k,  v in free_seats.items() if int(k) >= int(num_seats)), 0)
 
 
 async def update_data():
