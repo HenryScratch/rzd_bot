@@ -68,33 +68,33 @@ async def check_route(route) -> bool:
 
         src = route["src"].split("_")[1]
         dst = route["dst"].split("_")[1]
-        driver = get_driver()
-        driver.get(
-            f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
-        )
-        logger.info(
-            f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
-        )
-        # driver.implicitly_wait(5)
-        await asyncio.sleep(5)
-        html = driver.page_source
-        # driver.close()
+        with get_driver() as driver:
+            driver.get(
+                f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
+            )
+            logger.info(
+                f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
+            )
+            # driver.implicitly_wait(5)
+            await asyncio.sleep(5)
+            html = driver.page_source
+            # driver.close()
 
-        parser = LexborHTMLParser(html)
-        cards = parser.css("div.row.card__body")
-        # logger.info(f"{cards}")
-        if len(cards) > 0:
-            for card in cards:
-                seats = card.css_first("div.col.body__classes")
-                type_seats = seats.css("rzd-card-class")
-                if len(type_seats) > 0:
-                    logger.info("Seats available for the route.")
-                    return True
-            logger.info("No seats available.")
-            return False
-        else:
-            logger.error(f"No route found")
-            return False
+            parser = LexborHTMLParser(html)
+            cards = parser.css("div.row.card__body")
+            # logger.info(f"{cards}")
+            if len(cards) > 0:
+                for card in cards:
+                    seats = card.css_first("div.col.body__classes")
+                    type_seats = seats.css("rzd-card-class")
+                    if len(type_seats) > 0:
+                        logger.info("Seats available for the route.")
+                        return True
+                logger.info("No seats available.")
+                return False
+            else:
+                logger.error(f"No route found")
+                return False
     except Exception as e:
         logger.error(f"Error checking route: {e}")
         logger.exception(e)
@@ -107,65 +107,62 @@ async def check_route(route) -> bool:
 
 async def get_free_seats(number_route: str, url: str, type_seat: str):
     logger.info(f"Fetching free seats for route {number_route} and type {type_seat}.")
-    driver = get_driver()
-    try:
-        driver.get(url)
-        driver.maximize_window()
-        # driver.implicitly_wait(5)
-        await asyncio.sleep(5)
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+    with get_driver() as driver:
+        try:
+            driver.get(url)
+            driver.maximize_window()
+            # driver.implicitly_wait(5)
+            await asyncio.sleep(5)
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-        # находим все карточки с маршрутами
-        routes = driver.find_elements(By.CSS_SELECTOR, "h3.card-header__title")
-        for route in routes:
-            if route.text == number_route:
-                route.click()
-                await asyncio.sleep(1)
-                # находим все карточки с классом обслуживания (купе, св и т.д.)
-                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                type_seats = driver.find_elements(
-                    By.CSS_SELECTOR, "h3.railway-service-class-selection-item__title"
-                )
-                for type in type_seats:
-                    if type.text == type_seat:
-                        type.click()
-                        await asyncio.sleep(1)
-                        driver.execute_script(
-                            "window.scrollTo(0, document.body.scrollHeight);"
-                        )
-                        driver.find_element(
-                            By.CSS_SELECTOR, "button.button--terminal"
-                        ).click()
-                        await asyncio.sleep(1)
-                        driver.find_element(
-                            By.CSS_SELECTOR,
-                            "ui-kit-button.icon-btn.icon-btn--toggle-view-mode-btn",
-                        ).click()
-                        await asyncio.sleep(1)
-                        # список вагонов
-                        cars = driver.find_elements(By.CSS_SELECTOR, "rzd-car-button")
-                        cars_descriptions_list = []
-                        for car in cars:
-                            car.click()
-                            # текст со списоком свободных мест в вагоне
-                            seats = driver.find_element(
-                                By.CSS_SELECTOR, "rzd-car-seats-list-container"
+            # находим все карточки с маршрутами
+            routes = driver.find_elements(By.CSS_SELECTOR, "h3.card-header__title")
+            for route in routes:
+                if route.text == number_route:
+                    route.click()
+                    await asyncio.sleep(1)
+                    # находим все карточки с классом обслуживания (купе, св и т.д.)
+                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                    type_seats = driver.find_elements(
+                        By.CSS_SELECTOR, "h3.railway-service-class-selection-item__title"
+                    )
+                    for type in type_seats:
+                        if type.text == type_seat:
+                            type.click()
+                            await asyncio.sleep(1)
+                            driver.execute_script(
+                                "window.scrollTo(0, document.body.scrollHeight);"
                             )
-                            # список свободных мест в вагоне
-                            free_seats = [int(x) for x in get_number_seat(seats.text)]
-                            cars_descriptions_list.append(free_seats)
-                        return cars_descriptions_list
-                return None
-        return None
-    except Exception as err:
-        # raise
-        logger.exception(err)
-    finally:
-        driver.quit()
+                            driver.find_element(
+                                By.CSS_SELECTOR, "button.button--terminal"
+                            ).click()
+                            await asyncio.sleep(1)
+                            driver.find_element(
+                                By.CSS_SELECTOR,
+                                "ui-kit-button.icon-btn.icon-btn--toggle-view-mode-btn",
+                            ).click()
+                            await asyncio.sleep(1)
+                            # список вагонов
+                            cars = driver.find_elements(By.CSS_SELECTOR, "rzd-car-button")
+                            cars_descriptions_list = []
+                            for car in cars:
+                                car.click()
+                                # текст со списоком свободных мест в вагоне
+                                seats = driver.find_element(
+                                    By.CSS_SELECTOR, "rzd-car-seats-list-container"
+                                )
+                                # список свободных мест в вагоне
+                                free_seats = [int(x) for x in get_number_seat(seats.text)]
+                                cars_descriptions_list.append(free_seats)
+                            return cars_descriptions_list
+                    return None
+            return None
+        except Exception as err:
+            # raise
+            logger.exception(err)
 
 
 async def get_sv_cupe(number_route: str, url: str):
-    driver = get_driver()
     all_sv = await get_free_seats(number_route, url, "СВ")
     all_cupe = await get_free_seats(number_route, url, "Купе")
 
@@ -190,74 +187,72 @@ async def get_sv_cupe(number_route: str, url: str):
     return all
 
 
-async def get_descriptions_routes(url: str, driver=None):
-    try:
-        driver = driver or get_driver()
-        driver.get(url)
-        await asyncio.sleep(5)
-        # driver.implicitly_wait(5)
-        # await asyncio.sleep(15)
-        # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+async def get_descriptions_routes(url: str):
+    with get_driver() as driver:
+        try:
+            driver.get(url)
+            await asyncio.sleep(5)
+            # driver.implicitly_wait(5)
+            # await asyncio.sleep(15)
+            # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-        # находим все карточки с маршрутами
-        all_data = []
-        routes = driver.find_elements(By.CSS_SELECTOR, "div.row.card__body")
-        logger.info(f"Routes: {routes}")
+            # находим все карточки с маршрутами
+            all_data = []
+            routes = driver.find_elements(By.CSS_SELECTOR, "div.row.card__body")
+            logger.info(f"Routes: {routes}")
 
-        for route in routes:
-            types_seats = route.find_elements(By.CSS_SELECTOR, "rzd-card-class")
-            logger.info(f"Routes: {types_seats}")
+            for route in routes:
+                types_seats = route.find_elements(By.CSS_SELECTOR, "rzd-card-class")
+                logger.info(f"Routes: {types_seats}")
 
-            if len(types_seats) > 0:
-                data = {}
-                data["number_route"] = cleaner(
-                    route.find_element(By.CSS_SELECTOR, "h3.card-header__title").text
-                )
-                data["station_from"] = cleaner(
-                    route.find_element(
-                        By.CSS_SELECTOR,
-                        "div.card-route__station.card-route__station--from",
-                    ).text
-                )
-                data["station_to"] = cleaner(
-                    route.find_element(
-                        By.CSS_SELECTOR,
-                        "div.card-route__station.card-route__station--to",
-                    ).text
-                )
-                data["time_from"] = cleaner(
-                    route.find_element(
-                        By.CSS_SELECTOR,
-                        "div.card-route__date-time.card-route__date-time--from",
-                    ).text
-                )
-                data["time_to"] = cleaner(
-                    route.find_element(
-                        By.CSS_SELECTOR,
-                        "div.card-route__date-time.card-route__date-time--to",
-                    ).text
-                )
-                data_seats = {}
-                for type in types_seats:
-                    name = cleaner(
-                        type.find_element(By.CSS_SELECTOR, "div.card-class__name").text
+                if len(types_seats) > 0:
+                    data = {}
+                    data["number_route"] = cleaner(
+                        route.find_element(By.CSS_SELECTOR, "h3.card-header__title").text
                     )
-                    data_seats[name] = cleaner(
-                        type.find_element(
-                            By.CSS_SELECTOR, "div.card-class__quantity"
+                    data["station_from"] = cleaner(
+                        route.find_element(
+                            By.CSS_SELECTOR,
+                            "div.card-route__station.card-route__station--from",
                         ).text
                     )
-                    data["seats"] = data_seats
-                all_data.append(data)
-        # driver.close()
-        logger.info(f"all_data: {all_data}")
+                    data["station_to"] = cleaner(
+                        route.find_element(
+                            By.CSS_SELECTOR,
+                            "div.card-route__station.card-route__station--to",
+                        ).text
+                    )
+                    data["time_from"] = cleaner(
+                        route.find_element(
+                            By.CSS_SELECTOR,
+                            "div.card-route__date-time.card-route__date-time--from",
+                        ).text
+                    )
+                    data["time_to"] = cleaner(
+                        route.find_element(
+                            By.CSS_SELECTOR,
+                            "div.card-route__date-time.card-route__date-time--to",
+                        ).text
+                    )
+                    data_seats = {}
+                    for type in types_seats:
+                        name = cleaner(
+                            type.find_element(By.CSS_SELECTOR, "div.card-class__name").text
+                        )
+                        data_seats[name] = cleaner(
+                            type.find_element(
+                                By.CSS_SELECTOR, "div.card-class__quantity"
+                            ).text
+                        )
+                        data["seats"] = data_seats
+                    all_data.append(data)
+            # driver.close()
+            logger.info(f"all_data: {all_data}")
 
-        return all_data
+            return all_data
 
-    except Exception as err:
-        logger.exception(err)
-    finally:
-        driver.quit()
+        except Exception as err:
+            logger.exception(err)
 
 
 # async def main():
