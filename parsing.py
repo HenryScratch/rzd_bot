@@ -96,15 +96,17 @@ async def check_route(route) -> bool:
             return False
     except Exception as e:
         logger.error(f"Error checking route: {e}")
+        logger.exception(e)
+        # raise
 
     finally:
         driver.quit()
         logger.debug("WebDriver session closed.")
 
 
-async def get_free_seats(number_route: str, url: str, type_seat: str, driver):
+async def get_free_seats(number_route: str, url: str, type_seat: str):
     logger.info(f"Fetching free seats for route {number_route} and type {type_seat}.")
-
+    driver = get_driver()
     try:
         driver.get(url)
         driver.maximize_window()
@@ -155,14 +157,16 @@ async def get_free_seats(number_route: str, url: str, type_seat: str, driver):
                 return None
         return None
     except Exception as err:
-        print(err)
+        # raise
+        logger.exception(err)
     finally:
         driver.quit()
 
 
-async def get_sv_cupe(number_route: str, url: str, driver):
-    all_sv = await get_free_seats(number_route, url, "СВ", driver)
-    all_cupe = await get_free_seats(number_route, url, "Купе", driver)
+async def get_sv_cupe(number_route: str, url: str):
+    driver = get_driver()
+    all_sv = await get_free_seats(number_route, url, "СВ")
+    all_cupe = await get_free_seats(number_route, url, "Купе")
 
     all = {}
     if all_sv is not None:
@@ -250,7 +254,7 @@ async def get_descriptions_routes(url: str, driver=None):
         return all_data
 
     except Exception as err:
-        print(err)
+        logger.exception(err)
     finally:
         driver.quit()
 
