@@ -1,0 +1,13 @@
+# JetBrains IDE
+.idea
+
+# smth else
+venv/
+logs/
+*.env
+local*
+celerybeat-schedule
+*.DS_Store
+__pycache__/
+ngrok.exe
+stripe.exe
