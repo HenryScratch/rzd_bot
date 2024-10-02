@@ -75,7 +75,7 @@ async def get_seats_variants(found_keys: list) -> list[str]:
         return found_keys
 
 
-# import asyncio
+    # import asyncio
 # import json
 # import pprint
 
