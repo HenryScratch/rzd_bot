@@ -84,7 +84,7 @@ async def update_data():
                 {"$set": {"seats": found_dict["seats"]}},
             )
             found_new = {}
-            for type in ['СВ', 'Купе']:#direction["type_seats"]:
+            for type in {'СВ', 'Купе'}.intersection(direction["type_seats"]):
                 try:
                     logger.warning(f'New: {found_dict["seats"][type]}')
                     logger.warning(f'Was: {direction["seats"][type]}')
