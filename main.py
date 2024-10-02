@@ -15,7 +15,10 @@ from routes import router
 
 # TOKEN = getenv("BOT_TOKEN")
 
-TOKEN = "7202047569:AAHIYwoe81e2VauxbaDWix5VzfXLswmTt6w"
+
+TOKEN = os.getenv('BOT_TOKEN', "7202047569:AAHIYwoe81e2VauxbaDWix5VzfXLswmTt6w")
+
+
 
 dp = Dispatcher()
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
