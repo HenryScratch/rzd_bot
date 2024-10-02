@@ -330,11 +330,10 @@ async def get_number_route_from(message: Message, state: FSMContext):
     if found_route != None:
         await state.update_data(route=found_route)
         await message.answer(
-            "Выберите один или несколько типов мест для отслеживания или нажмите 'Далее' для выбора всех типов сразу.",
-            reply_markup=await inline_type_seats(await get_seats_variants(found_route["seats"].keys())),
+            "Укажите желаемое количество мест",
         )
-        await state.set_state(Route_add.type_seats_selecting_from)
-        await state.update_data(type_seats=set())
+        await state.set_state(Route_add.num_seats)
+        await state.update_data(route=found_route)
     else:
         await message.answer("Введен несуществующий маршрут, попробуйте еще раз")
         # await state.set_state(Route_add.number_route_single)
@@ -500,7 +499,7 @@ async def add_date_back(message: Message, state: FSMContext):
 async def add_obratno(message: Message, state: FSMContext):
     await message.answer("Обработка запроса для обратного маршрута...")
     data = await state.get_data()
-    # data = data["obratno"]
+    data = data["obratno"]
     check = await check_route(data)
     if check:
         url = f"https://ticket.rzd.ru/searchresults/v/1/{data['src'].split('_')[1]}/{data['dst'].split('_')[1]}/{convert_date(data['date'])}"

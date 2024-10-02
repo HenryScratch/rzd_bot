@@ -75,7 +75,7 @@ async def check_route(route) -> bool:
             f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
         )
         # driver.implicitly_wait(5)
-        time.sleep(5)
+        await asyncio.sleep(5)
         html = driver.page_source
         # driver.close()
 
@@ -96,20 +96,22 @@ async def check_route(route) -> bool:
             return False
     except Exception as e:
         logger.error(f"Error checking route: {e}")
+        logger.exception(e)
+        # raise
 
     finally:
         driver.quit()
         logger.debug("WebDriver session closed.")
 
 
-async def get_free_seats(number_route: str, url: str, type_seat: str, driver):
+async def get_free_seats(number_route: str, url: str, type_seat: str):
     logger.info(f"Fetching free seats for route {number_route} and type {type_seat}.")
-
+    driver = get_driver()
     try:
         driver.get(url)
         driver.maximize_window()
         # driver.implicitly_wait(5)
-        time.sleep(5)
+        await asyncio.sleep(5)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
         # находим все карточки с маршрутами
@@ -117,7 +119,7 @@ async def get_free_seats(number_route: str, url: str, type_seat: str, driver):
         for route in routes:
             if route.text == number_route:
                 route.click()
-                time.sleep(1)
+                await asyncio.sleep(1)
                 # находим все карточки с классом обслуживания (купе, св и т.д.)
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 type_seats = driver.find_elements(
@@ -126,19 +128,19 @@ async def get_free_seats(number_route: str, url: str, type_seat: str, driver):
                 for type in type_seats:
                     if type.text == type_seat:
                         type.click()
-                        time.sleep(1)
+                        await asyncio.sleep(1)
                         driver.execute_script(
                             "window.scrollTo(0, document.body.scrollHeight);"
                         )
                         driver.find_element(
                             By.CSS_SELECTOR, "button.button--terminal"
                         ).click()
-                        time.sleep(1)
+                        await asyncio.sleep(1)
                         driver.find_element(
                             By.CSS_SELECTOR,
                             "ui-kit-button.icon-btn.icon-btn--toggle-view-mode-btn",
                         ).click()
-                        time.sleep(1)
+                        await asyncio.sleep(1)
                         # список вагонов
                         cars = driver.find_elements(By.CSS_SELECTOR, "rzd-car-button")
                         cars_descriptions_list = []
@@ -155,14 +157,16 @@ async def get_free_seats(number_route: str, url: str, type_seat: str, driver):
                 return None
         return None
     except Exception as err:
-        print(err)
+        # raise
+        logger.exception(err)
     finally:
         driver.quit()
 
 
-async def get_sv_cupe(number_route: str, url: str, driver):
-    all_sv = await get_free_seats(number_route, url, "СВ", driver)
-    all_cupe = await get_free_seats(number_route, url, "Купе", driver)
+async def get_sv_cupe(number_route: str, url: str):
+    driver = get_driver()
+    all_sv = await get_free_seats(number_route, url, "СВ")
+    all_cupe = await get_free_seats(number_route, url, "Купе")
 
     all = {}
     if all_sv is not None:
@@ -189,9 +193,9 @@ async def get_descriptions_routes(url: str, driver=None):
     try:
         driver = driver or get_driver()
         driver.get(url)
-        time.sleep(5)
+        await asyncio.sleep(5)
         # driver.implicitly_wait(5)
-        # time.sleep(15)
+        # await asyncio.sleep(15)
         # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
         # находим все карточки с маршрутами
@@ -250,7 +254,7 @@ async def get_descriptions_routes(url: str, driver=None):
         return all_data
 
     except Exception as err:
-        print(err)
+        logger.exception(err)
     finally:
         driver.quit()
 
