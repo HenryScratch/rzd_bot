@@ -355,19 +355,21 @@ async def type_seats_done_callback_from(callback: CallbackQuery, state: FSMConte
 
         data["type_seats"] = list(data["type_seats"])
         data.pop("routes", None)
-        data.pop("date_back", None)
+        date_back = data.pop("date_back", None)
         obratno = data.pop("obratno", None)
         data["date"] = data.pop("date_forward", None)
         await add_routes_db(callback.from_user.id, data)
 
         await state.set_state(Route_add.obratno)
         if obratno:
+            data['date_back'] = date_back
+            data['obratno'] = obratno
             await add_obratno(message, state)
 
     else:
         data["type_seats"] = list(data["type_seats"])
         data.pop("routes", None)
-        data.pop("date_back", None)
+        date_back = data.pop("date_back", None)
         obratno = data.pop("obratno", None)
         data["date"] = data.pop("date_forward", None)
         await add_routes_db(callback.from_user.id, data)
@@ -377,6 +379,8 @@ async def type_seats_done_callback_from(callback: CallbackQuery, state: FSMConte
 
         await state.set_state(Route_add.obratno)
         if obratno:
+            data['obratno'] = obratno
+            data['date_back'] = date_back
             await add_obratno(message, state)
 
 
