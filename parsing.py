@@ -111,7 +111,7 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
         driver.get(url)
         driver.maximize_window()
         # driver.implicitly_wait(5)
-        time.sleep(5)
+        await asyncio.sleep(5)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
         # находим все карточки с маршрутами
@@ -119,7 +119,7 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
         for route in routes:
             if route.text == number_route:
                 route.click()
-                time.sleep(1)
+                await asyncio.sleep(1)
                 # находим все карточки с классом обслуживания (купе, св и т.д.)
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
                 type_seats = driver.find_elements(
@@ -128,19 +128,19 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
                 for type in type_seats:
                     if type.text == type_seat:
                         type.click()
-                        time.sleep(1)
+                        await asyncio.sleep(1)
                         driver.execute_script(
                             "window.scrollTo(0, document.body.scrollHeight);"
                         )
                         driver.find_element(
                             By.CSS_SELECTOR, "button.button--terminal"
                         ).click()
-                        time.sleep(1)
+                        await asyncio.sleep(1)
                         driver.find_element(
                             By.CSS_SELECTOR,
                             "ui-kit-button.icon-btn.icon-btn--toggle-view-mode-btn",
                         ).click()
-                        time.sleep(1)
+                        await asyncio.sleep(1)
                         # список вагонов
                         cars = driver.find_elements(By.CSS_SELECTOR, "rzd-car-button")
                         cars_descriptions_list = []
@@ -193,9 +193,9 @@ async def get_descriptions_routes(url: str, driver=None):
     try:
         driver = driver or get_driver()
         driver.get(url)
-        time.sleep(5)
+        await asyncio.sleep(5)
         # driver.implicitly_wait(5)
-        # time.sleep(15)
+        # await asyncio.sleep(15)
         # driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
         # находим все карточки с маршрутами
