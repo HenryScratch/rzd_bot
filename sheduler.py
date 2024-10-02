@@ -112,7 +112,7 @@ async def main():
             try:
                 print(datetime.now())
                 await update_data()
-                await asyncio.sleep(60)
+                await asyncio.sleep(30)
             except Exception as e:
                 logger.exception(e)
             finally:
