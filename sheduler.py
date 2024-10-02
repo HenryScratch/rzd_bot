@@ -85,8 +85,9 @@ async def update_data():
             )
             found_new = {}
             for type in ['СВ', 'Купе']:#direction["type_seats"]:
-                logger.warning(found_dict["seats"])
                 try:
+                    logger.warning(f'New: {found_dict["seats"][type]}')
+                    logger.warning(f'Was: {direction["seats"][type]}')
                     if new_seats := suitable_compartments(found_dict["seats"][type], direction['num_seats']) - suitable_compartments(direction["seats"][type], direction['num_seats']):
                         if new_seats > 0:
                             found_new[type] = new_seats
