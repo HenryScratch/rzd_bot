@@ -62,6 +62,13 @@ async def get_seats_variants(found_keys: list) -> list[str]:
         "Семейный",
     ]
     variants2 = [
+        "Плацкартный",
+        "Купе",
+        "СВ",
+        "Люкс",
+        "Перевозка животных без сопровождающего",
+    ]
+    final_variants2 = [
         "Купе",
         "СВ",
         "Люкс",
@@ -70,7 +77,7 @@ async def get_seats_variants(found_keys: list) -> list[str]:
     if any(k in variants1 for k in found_keys):
         return variants1
     elif any(k in variants2 for k in found_keys):
-        return variants2
+        return final_variants2
     else:
         return found_keys
 
