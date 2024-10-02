@@ -19,8 +19,8 @@ def suitable_compartments(free_seats, num_seats):
     if not isinstance(free_seats, dict):
         if isinstance(free_seats, list):
             free_seats = max(map(len, free_seats))
-        return 1 if free_seats >= int(num_seats) else 0
-    return sum((v for k,  v in free_seats.items() if int(k) >= int(num_seats)), 0)
+        return int(free_seats) if int(free_seats) >= int(num_seats) else 0
+    return sum((int(num_seats) for k,  v in free_seats.items() if int(k) >= int(num_seats)), 0)
 
 
 async def update_data():
@@ -85,8 +85,9 @@ async def update_data():
             )
             found_new = {}
             for type in ['СВ', 'Купе']:#direction["type_seats"]:
-                logger.warning(found_dict["seats"])
                 try:
+                    logger.warning(f'New: {found_dict["seats"][type]}')
+                    logger.warning(f'Was: {direction["seats"][type]}')
                     if new_seats := suitable_compartments(found_dict["seats"][type], direction['num_seats']) - suitable_compartments(direction["seats"][type], direction['num_seats']):
                         if new_seats > 0:
                             found_new[type] = new_seats
