@@ -17,8 +17,7 @@ from routes import router
 # TOKEN = getenv("BOT_TOKEN")
 
 
-TOKEN = os.getenv('BOT_TOKEN', "7202047569:AAHIYwoe81e2VauxbaDWix5VzfXLswmTt6w")
-
+TOKEN = os.getenv("BOT_TOKEN", "7671409801:AAEIaOtZexmh8p3Rhj1e312PoIsieOpFEp8")
 
 
 dp = Dispatcher()
