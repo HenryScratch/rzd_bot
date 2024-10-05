@@ -7,7 +7,7 @@ from helpers import convert_date
 # from parsing import parsing_route
 
 
-client = motor.motor_asyncio.AsyncIOMotorClient("localhost", 27017)
+client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo:27017")
 db = client.telegram
 
 
@@ -81,8 +81,9 @@ async def get_seats_variants(found_keys: list) -> list[str]:
     else:
         return found_keys
 
-
     # import asyncio
+
+
 # import json
 # import pprint
 

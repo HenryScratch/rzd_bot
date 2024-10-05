@@ -6,7 +6,7 @@ import motor.motor_asyncio
 # from urllib.parse import quote
 import requests
 
-client = motor.motor_asyncio.AsyncIOMotorClient("localhost", 27017)
+client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo:27017")
 db = client.telegram
 collection = db.users
 

@@ -1,0 +1,38 @@
+# Use an official Python runtime as a base image
+FROM python:3.12-slim
+
+# Set environment variables to prevent Python from writing .pyc files to disk
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+# Install Poetry
+RUN pip install --no-cache-dir poetry
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy Poetry dependency files first (to use Docker's cache for dependencies)
+COPY pyproject.toml poetry.lock ./
+
+# Install dependencies using Poetry
+RUN poetry config virtualenvs.create false && poetry install --no-interaction --no-ansi
+RUN apt-get update && apt-get install -y \
+    firefox-esr \
+    libgtk-3-0 \
+    libdbus-glib-1-2 \
+    libxt6 \
+    xauth \
+    xvfb
+# Copy the entire application code into the container
+COPY . .
+COPY ./geckodriver .
+
+# Set environment variables
+
+ENV MONGO_URL="mongodb://mongo:27017"
+
+# Expose any necessary ports (optional)
+# EXPOSE 8000
+
+# Run main.py as the default command
+CMD ["poetry", "run", "python", "main.py"]

@@ -100,9 +100,9 @@ async def check_route(route) -> bool:
         logger.exception(e)
         # raise
 
-    finally:
-        driver.quit()
-        logger.debug("WebDriver session closed.")
+    # finally:
+    #     driver.quit()
+    #     logger.debug("WebDriver session closed.")
 
 
 async def get_free_seats(number_route: str, url: str, type_seat: str):
@@ -122,9 +122,12 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
                     route.click()
                     await asyncio.sleep(1)
                     # находим все карточки с классом обслуживания (купе, св и т.д.)
-                    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                    driver.execute_script(
+                        "window.scrollTo(0, document.body.scrollHeight);"
+                    )
                     type_seats = driver.find_elements(
-                        By.CSS_SELECTOR, "h3.railway-service-class-selection-item__title"
+                        By.CSS_SELECTOR,
+                        "h3.railway-service-class-selection-item__title",
                     )
                     for type in type_seats:
                         if type.text == type_seat:
@@ -143,7 +146,9 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
                             ).click()
                             await asyncio.sleep(1)
                             # список вагонов
-                            cars = driver.find_elements(By.CSS_SELECTOR, "rzd-car-button")
+                            cars = driver.find_elements(
+                                By.CSS_SELECTOR, "rzd-car-button"
+                            )
                             cars_descriptions_list = []
                             for car in cars:
                                 car.click()
@@ -152,7 +157,9 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
                                     By.CSS_SELECTOR, "rzd-car-seats-list-container"
                                 )
                                 # список свободных мест в вагоне
-                                free_seats = [int(x) for x in get_number_seat(seats.text)]
+                                free_seats = [
+                                    int(x) for x in get_number_seat(seats.text)
+                                ]
                                 cars_descriptions_list.append(free_seats)
                             return cars_descriptions_list
                     return None
@@ -208,7 +215,9 @@ async def get_descriptions_routes(url: str):
                 if len(types_seats) > 0:
                     data = {}
                     data["number_route"] = cleaner(
-                        route.find_element(By.CSS_SELECTOR, "h3.card-header__title").text
+                        route.find_element(
+                            By.CSS_SELECTOR, "h3.card-header__title"
+                        ).text
                     )
                     data["station_from"] = cleaner(
                         route.find_element(
@@ -237,7 +246,9 @@ async def get_descriptions_routes(url: str):
                     data_seats = {}
                     for type in types_seats:
                         name = cleaner(
-                            type.find_element(By.CSS_SELECTOR, "div.card-class__name").text
+                            type.find_element(
+                                By.CSS_SELECTOR, "div.card-class__name"
+                            ).text
                         )
                         data_seats[name] = cleaner(
                             type.find_element(

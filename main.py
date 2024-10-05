@@ -17,13 +17,13 @@ from routes import router
 # TOKEN = getenv("BOT_TOKEN")
 
 
-TOKEN = os.getenv("BOT_TOKEN", "7671409801:AAEIaOtZexmh8p3Rhj1e312PoIsieOpFEp8")
+TOKEN = "7811198237:AAETUz4ER9R1GzmZB1emQHohLjRuC5iE4T4"
 
 
 dp = Dispatcher()
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
-client = motor.motor_asyncio.AsyncIOMotorClient("localhost", 27017)
+client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo:27017")
 db_queue = client.queue
 
 

@@ -8,9 +8,9 @@ from loguru import logger
 
 # from bson import ObjectId
 from helpers import convert_date
-from parsing import get_descriptions_routes, get_free_seats, get_sv_cupe, get_driver
+from parsing import get_descriptions_routes, get_driver, get_free_seats, get_sv_cupe
 
-client = motor.motor_asyncio.AsyncIOMotorClient("localhost", 27017)
+client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo:27017")
 db = client.telegram
 db_queue = client.queue
 
@@ -20,7 +20,9 @@ def suitable_compartments(free_seats, num_seats):
         if isinstance(free_seats, list):
             free_seats = max(map(len, free_seats))
         return int(free_seats) if int(free_seats) >= int(num_seats) else 0
-    return sum((int(num_seats) for k,  v in free_seats.items() if int(k) >= int(num_seats)), 0)
+    return sum(
+        (int(num_seats) for k, v in free_seats.items() if int(k) >= int(num_seats)), 0
+    )
 
 
 async def update_data():
@@ -63,7 +65,7 @@ async def update_data():
                     type_new_data = await get_free_seats(
                         number_route=direction["number_route"],
                         url=direction["url"],
-                        type_seat=type
+                        type_seat=type,
                     )
                     if type_new_data:
                         logger.info(f"New parsed type_seats data: {type_new_data}")
@@ -84,17 +86,20 @@ async def update_data():
                 {"$set": {"seats": found_dict["seats"]}},
             )
             found_new = {}
-            for type in {'СВ', 'Купе'}.intersection(direction["type_seats"]):
+            for type in {"СВ", "Купе"}.intersection(direction["type_seats"]):
                 try:
                     logger.warning(f'New: {found_dict["seats"][type]}')
                     logger.warning(f'Was: {direction["seats"][type]}')
-                    if new_seats := suitable_compartments(found_dict["seats"][type], direction['num_seats']) - suitable_compartments(direction["seats"][type], direction['num_seats']):
+                    if new_seats := suitable_compartments(
+                        found_dict["seats"][type], direction["num_seats"]
+                    ) - suitable_compartments(
+                        direction["seats"][type], direction["num_seats"]
+                    ):
                         if new_seats > 0:
                             found_new[type] = new_seats
                             logger.info(f"New suitable compartments: {found_new}")
                 except KeyError:
                     pass
-
 
             # if result.modified_count > 0:
             if found_new:
@@ -120,7 +125,6 @@ async def main():
                 await asyncio.sleep(10)
     except Exception as e:
         logger.exception(e)
-
 
 
 if __name__ == "__main__":
