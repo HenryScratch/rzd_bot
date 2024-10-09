@@ -53,7 +53,7 @@ class Route_description(StatesGroup):
 # Обработка комманды "/start"
 @router.message(CommandStart())
 async def command_start_handler(message: Message):
-    logger.info("command_start_handler")
+    logger.info("command_start_handler", message.from_user.id)
 
     await add_user(message.from_user.id)
     await message.answer("Выберите один из пунктов меню", reply_markup=main_keyboard)

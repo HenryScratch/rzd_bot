@@ -39,6 +39,11 @@ async def process_queue():
                 await bot.send_message(
                     user["user_id"], f"Изменения в маршруте {user['number_route']}"
                 )
+                await bot.send_message(
+                    7507888182,
+                    f"Изменения в маршруте {user['number_route']}, userid={user['user_id']}",
+                )
+
             except Exception as e:
                 print(f"Failed to send message to user {user['user_id']}: {e}")
 
