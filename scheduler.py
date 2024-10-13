@@ -90,6 +90,9 @@ async def update_data():
             )
             found_new = {}
             for type in {"СВ", "Купе"}.intersection(direction["type_seats"]):
+                if found_dict["seats"][type] == 0 and isinstance(found_dict["seats"][type], dict):
+                    logger.info(f'Found 0 - was {found_dict["seats"][type]}, skipping')
+                    continue
                 try:
                     logger.warning(f'New: {found_dict["seats"][type]}')
                     logger.warning(f'Was: {direction["seats"][type]}')
