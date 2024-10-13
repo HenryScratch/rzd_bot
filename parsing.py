@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import pprint
 import time
 from collections import Counter
@@ -29,8 +30,7 @@ def get_driver():
     options.add_argument("--headless")  # Run in headless mode (no UI)
 
     # Specify the path to geckodriver if necessary (omit if in PATH)
-    geckodriver_path = "./geckodriver"  # Adjust as needed
-    geckodriver_path = "/opt/homebrew/Cellar/geckodriver/0.35.0/bin/geckodriver"
+    geckodriver_path = os.getenv('DRIVER_PATH', "./geckodriver")
 
 
     service = FirefoxService(executable_path=geckodriver_path)
