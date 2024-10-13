@@ -1,4 +1,5 @@
 import json
+import os
 
 import aiohttp
 import motor.motor_asyncio
@@ -6,7 +7,7 @@ import motor.motor_asyncio
 # from urllib.parse import quote
 import requests
 
-client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo:27017")
+client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv('MONGO_URL', "mongodb://mongo:27017"))
 db = client.telegram
 collection = db.users
 

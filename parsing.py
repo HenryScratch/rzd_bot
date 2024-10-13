@@ -30,6 +30,8 @@ def get_driver():
 
     # Specify the path to geckodriver if necessary (omit if in PATH)
     geckodriver_path = "./geckodriver"  # Adjust as needed
+    geckodriver_path = "/opt/homebrew/Cellar/geckodriver/0.35.0/bin/geckodriver"
+
 
     service = FirefoxService(executable_path=geckodriver_path)
 
@@ -169,9 +171,13 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
             logger.exception(err)
 
 
-async def get_sv_cupe(number_route: str, url: str):
-    all_sv = await get_free_seats(number_route, url, "СВ")
-    all_cupe = await get_free_seats(number_route, url, "Купе")
+async def get_sv_cupe(number_route: str, url: str, type_seats: list):
+    all_sv = None
+    all_cupe = None
+    if 'СВ' in type_seats:
+        all_sv = await get_free_seats(number_route, url, "СВ")
+    if 'Купе' in type_seats:
+        all_cupe = await get_free_seats(number_route, url, "Купе")
 
     all = {}
     if all_sv is not None:
