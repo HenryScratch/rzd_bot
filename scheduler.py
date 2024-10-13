@@ -98,6 +98,7 @@ async def update_data():
                     ) - suitable_compartments(
                         direction["seats"][type], direction["num_seats"]
                     ):
+                        logger.warning(f'New_seats {new_seats}')
                         if new_seats > 0:
                             found_new[type] = new_seats
                             logger.info(f"New suitable compartments: {found_new}")

@@ -30,7 +30,7 @@ def get_driver():
     options.add_argument("--headless")  # Run in headless mode (no UI)
 
     # Specify the path to geckodriver if necessary (omit if in PATH)
-    geckodriver_path = os.getenv('DRIVER_PATH', "./geckodriver")
+    geckodriver_path = os.getenv('GECKO_PATH', "./geckodriver")
 
 
     service = FirefoxService(executable_path=geckodriver_path)
