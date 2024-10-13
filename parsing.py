@@ -122,7 +122,7 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
             for route in routes:
                 if route.text == number_route:
                     route.click()
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(3)
                     # находим все карточки с классом обслуживания (купе, св и т.д.)
                     driver.execute_script(
                         "window.scrollTo(0, document.body.scrollHeight);"
@@ -134,7 +134,7 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
                     for type in type_seats:
                         if type.text == type_seat:
                             type.click()
-                            await asyncio.sleep(1)
+                            await asyncio.sleep(2)
                             driver.execute_script(
                                 "window.scrollTo(0, document.body.scrollHeight);"
                             )
