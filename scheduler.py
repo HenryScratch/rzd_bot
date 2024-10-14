@@ -1,4 +1,5 @@
 import asyncio
+import os
 import pprint
 from datetime import datetime
 
@@ -10,7 +11,7 @@ from loguru import logger
 from helpers import convert_date
 from parsing import get_descriptions_routes, get_driver, get_free_seats, get_sv_cupe
 
-client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo:27017")
+client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv('MONGO_URL', "mongodb://mongo:27017"))
 db = client.telegram
 db_queue = client.queue
 
@@ -20,6 +21,7 @@ def suitable_compartments(free_seats, num_seats):
         if isinstance(free_seats, list):
             free_seats = max(map(len, free_seats))
         return int(free_seats) if int(free_seats) >= int(num_seats) else 0
+    logger.info(free_seats)
     return sum(
         (int(num_seats) for k, v in free_seats.items() if int(k) >= int(num_seats)), 0
     )
@@ -76,7 +78,8 @@ async def update_data():
             except Exception as e:
                 logger.error(f"Problem parsing type_seats data {e}")
 
-            sv_cupe = await get_sv_cupe(direction["number_route"], direction["url"])
+            sv_cupe = await get_sv_cupe(direction["number_route"], direction["url"], direction["type_seats"])
+            logger.info(direction["url"])
             found_dict["seats"]["Купе"] = sv_cupe["Купе"]
             found_dict["seats"]["СВ"] = sv_cupe["СВ"]
             logger.info(f"AAAAJSJDJDSJSDJJSD: {found_dict}")
@@ -87,6 +90,9 @@ async def update_data():
             )
             found_new = {}
             for type in {"СВ", "Купе"}.intersection(direction["type_seats"]):
+                if found_dict["seats"][type] == 0 and isinstance(found_dict["seats"][type], dict):
+                    logger.info(f'Found 0 - was {found_dict["seats"][type]}, skipping')
+                    continue
                 try:
                     logger.warning(f'New: {found_dict["seats"][type]}')
                     logger.warning(f'Was: {direction["seats"][type]}')
@@ -95,6 +101,7 @@ async def update_data():
                     ) - suitable_compartments(
                         direction["seats"][type], direction["num_seats"]
                     ):
+                        logger.warning(f'New_seats {new_seats}')
                         if new_seats > 0:
                             found_new[type] = new_seats
                             logger.info(f"New suitable compartments: {found_new}")

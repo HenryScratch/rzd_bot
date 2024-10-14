@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import pprint
 import time
 from collections import Counter
@@ -29,7 +30,8 @@ def get_driver():
     options.add_argument("--headless")  # Run in headless mode (no UI)
 
     # Specify the path to geckodriver if necessary (omit if in PATH)
-    geckodriver_path = "./geckodriver"  # Adjust as needed
+    geckodriver_path = os.getenv('GECKO_PATH', "./geckodriver")
+
 
     service = FirefoxService(executable_path=geckodriver_path)
 
@@ -120,7 +122,7 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
             for route in routes:
                 if route.text == number_route:
                     route.click()
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(3)
                     # находим все карточки с классом обслуживания (купе, св и т.д.)
                     driver.execute_script(
                         "window.scrollTo(0, document.body.scrollHeight);"
@@ -132,7 +134,7 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
                     for type in type_seats:
                         if type.text == type_seat:
                             type.click()
-                            await asyncio.sleep(1)
+                            await asyncio.sleep(2)
                             driver.execute_script(
                                 "window.scrollTo(0, document.body.scrollHeight);"
                             )
@@ -169,9 +171,13 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
             logger.exception(err)
 
 
-async def get_sv_cupe(number_route: str, url: str):
-    all_sv = await get_free_seats(number_route, url, "СВ")
-    all_cupe = await get_free_seats(number_route, url, "Купе")
+async def get_sv_cupe(number_route: str, url: str, type_seats: list):
+    all_sv = None
+    all_cupe = None
+    if 'СВ' in type_seats:
+        all_sv = await get_free_seats(number_route, url, "СВ")
+    if 'Купе' in type_seats:
+        all_cupe = await get_free_seats(number_route, url, "Купе")
 
     all = {}
     if all_sv is not None:

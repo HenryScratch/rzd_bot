@@ -1,3 +1,5 @@
+import os
+
 import motor.motor_asyncio
 from bson import ObjectId
 from loguru import logger
@@ -7,7 +9,7 @@ from helpers import convert_date
 # from parsing import parsing_route
 
 
-client = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo:27017")
+client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv('MONGO_URL', "mongodb://mongo:27017"))
 db = client.telegram
 
 
@@ -23,7 +25,7 @@ async def add_routes_db(user: str, route: dict):
         f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
     )
     # route['routes'] = await parsing_route(route['url'])
-    logger.info("Route added to db f{route}")
+    logger.info(f"Route added to db {route}")
     await db[f"{user}"].insert_one(route)
 
 
