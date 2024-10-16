@@ -11,7 +11,9 @@ from loguru import logger
 from helpers import convert_date
 from parsing import get_descriptions_routes, get_driver, get_free_seats, get_sv_cupe
 
-client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv('MONGO_URL', "mongodb://mongo:27017"))
+client = motor.motor_asyncio.AsyncIOMotorClient(
+    os.getenv("MONGO_URL", "mongodb://mongo:27017")
+)
 db = client.telegram
 db_queue = client.queue
 
@@ -78,7 +80,9 @@ async def update_data():
             except Exception as e:
                 logger.error(f"Problem parsing type_seats data {e}")
 
-            sv_cupe = await get_sv_cupe(direction["number_route"], direction["url"], direction["type_seats"])
+            sv_cupe = await get_sv_cupe(
+                direction["number_route"], direction["url"], direction["type_seats"]
+            )
             logger.info(direction["url"])
             found_dict["seats"]["Купе"] = sv_cupe["Купе"]
             found_dict["seats"]["СВ"] = sv_cupe["СВ"]
@@ -89,8 +93,10 @@ async def update_data():
                 {"$set": {"seats": found_dict["seats"]}},
             )
             found_new = {}
-            for type in {"СВ", "Купе"}.intersection(direction["type_seats"]):
-                if found_dict["seats"][type] == 0 and isinstance(found_dict["seats"][type], dict):
+            for type in {"СВ", "Купе", "Люкс"}.intersection(direction["type_seats"]):
+                if found_dict["seats"][type] == 0 and isinstance(
+                    found_dict["seats"][type], dict
+                ):
                     logger.info(f'Found 0 - was {found_dict["seats"][type]}, skipping')
                     continue
                 try:
@@ -101,7 +107,7 @@ async def update_data():
                     ) - suitable_compartments(
                         direction["seats"][type], direction["num_seats"]
                     ):
-                        logger.warning(f'New_seats {new_seats}')
+                        logger.warning(f"New_seats {new_seats}")
                         if new_seats > 0:
                             found_new[type] = new_seats
                             logger.info(f"New suitable compartments: {found_new}")
@@ -125,11 +131,11 @@ async def main():
             try:
                 print(datetime.now())
                 await update_data()
-                await asyncio.sleep(10)
+                await asyncio.sleep(4)
             except Exception as e:
                 logger.exception(e)
             finally:
-                await asyncio.sleep(10)
+                await asyncio.sleep(4)
     except Exception as e:
         logger.exception(e)
 

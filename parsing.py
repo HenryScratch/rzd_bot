@@ -30,8 +30,7 @@ def get_driver():
     options.add_argument("--headless")  # Run in headless mode (no UI)
 
     # Specify the path to geckodriver if necessary (omit if in PATH)
-    geckodriver_path = os.getenv('GECKO_PATH', "./geckodriver")
-
+    geckodriver_path = os.getenv("GECKO_PATH", "./geckodriver")
 
     service = FirefoxService(executable_path=geckodriver_path)
 
@@ -78,7 +77,7 @@ async def check_route(route) -> bool:
                 f"https://ticket.rzd.ru/searchresults/v/1/{src}/{dst}/{convert_date(route['date'])}"
             )
             # driver.implicitly_wait(5)
-            await asyncio.sleep(5)
+            await asyncio.sleep(6)
             html = driver.page_source
             # driver.close()
 
@@ -174,9 +173,9 @@ async def get_free_seats(number_route: str, url: str, type_seat: str):
 async def get_sv_cupe(number_route: str, url: str, type_seats: list):
     all_sv = None
     all_cupe = None
-    if 'СВ' in type_seats:
+    if "СВ" in type_seats:
         all_sv = await get_free_seats(number_route, url, "СВ")
-    if 'Купе' in type_seats:
+    if "Купе" in type_seats:
         all_cupe = await get_free_seats(number_route, url, "Купе")
 
     all = {}
@@ -264,7 +263,7 @@ async def get_descriptions_routes(url: str):
                         data["seats"] = data_seats
                     all_data.append(data)
             # driver.close()
-            logger.info(f"all_data: {all_data}")
+            logger.info(f"all_data: {len(all_data)}")
 
             return all_data
 

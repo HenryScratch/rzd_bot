@@ -14,6 +14,7 @@ selectolax = "^0.3.21"
 selenium = "^4.25.0"
 requests = "^2.32.3"
 loguru = "^0.7.2"
+python-dotenv = "^1.0.1"
 
 
 [build-system]

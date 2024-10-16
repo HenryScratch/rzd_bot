@@ -11,16 +11,15 @@ from bson import ObjectId
 
 from routes import router
 
-# from os import getenv
-
-
-TOKEN = os.getenv("BOT_TOKEN", "7671409801:AAEIaOtZexmh8p3Rhj1e312PoIsieOpFEp8")
+TOKEN = os.getenv("BOT_TOKEN", "8089418834:AAG6thF_y2Ipaw1_TC8uG55_ea_Ib8ABs88")
 
 
 dp = Dispatcher()
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-
-client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv('MONGO_URL', "mongodb://mongo:27017"))
+# print(os.getenv("MONGO_URL", "mongodb://mongo:27017"))
+client = motor.motor_asyncio.AsyncIOMotorClient(
+    os.getenv("MONGO_URL", "mongodb://mongo:27017")
+)
 db_queue = client.queue
 
 
@@ -45,7 +44,7 @@ async def process_queue():
                 print(f"Failed to send message to user {user['user_id']}: {e}")
 
         # Задержка перед следующей проверкой очереди
-        await asyncio.sleep(5)  # Проверяет очередь каждые 5 секунд
+        await asyncio.sleep(2)  # Проверяет очередь каждые 5 секунд
 
 
 async def on_startup():
