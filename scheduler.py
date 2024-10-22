@@ -131,11 +131,11 @@ async def main():
             try:
                 print(datetime.now())
                 await update_data()
-                await asyncio.sleep(4)
+                await asyncio.sleep(1)
             except Exception as e:
                 logger.exception(e)
             finally:
-                await asyncio.sleep(4)
+                await asyncio.sleep(1)
     except Exception as e:
         logger.exception(e)
 
