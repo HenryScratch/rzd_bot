@@ -27,7 +27,7 @@ from helpers import (
 def get_driver():
     logger.info("Initializing Firefox WebDriver...")
     options = Options()
-    # options.add_argument("--headless")  # Run in headless mode (no UI)
+    options.add_argument("--headless")  # Run in headless mode (no UI)
 
     # Specify the path to geckodriver if necessary (omit if in PATH)
     geckodriver_path = os.getenv("GECKO_PATH", "./geckodriver")
